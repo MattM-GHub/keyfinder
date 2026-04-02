@@ -139,9 +139,9 @@ document.addEventListener('DOMContentLoaded', () => {
     function initGrid() {
         if (!quadrantGrid) return;
         // DO NO HARM: Using createElement instead of innerHTML
-        for (let i = 1; i <= 3; i++) {
+        for (let i = 1; i <= 9; i++) {
             const btn = document.createElement('button');
-            btn.className = 'quadrant-btn py-4';
+            btn.className = 'quadrant-btn';
             btn.textContent = i;
             if (i === 1) btn.classList.add('active-quadrant');
             
