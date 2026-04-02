@@ -1,0 +1,111 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>Visual Key Index</title>
+    <link rel="manifest" href="manifest.json">
+    <meta name="theme-color" content="#0f172a">
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link rel="stylesheet" href="styles.css">
+    <!-- Supabase JS CDN -->
+    <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+</head>
+<body class="bg-slate-50 text-slate-900 font-sans antialiased">
+    <!-- App Container (Mobile First) -->
+    <div class="max-w-md mx-auto bg-white min-h-screen shadow-lg relative flex flex-col">
+        
+        <!-- Header -->
+        <header class="bg-slate-900 text-white p-4 sticky top-0 z-10 shadow-md flex justify-between items-center">
+            <h1 class="text-xl font-bold tracking-tight">Visual Key Index</h1>
+            <button id="btn-show-add" class="bg-blue-600 hover:bg-blue-500 px-3 py-1 rounded text-sm font-medium transition-colors hidden">Cancel</button>
+        </header>
+
+        <!-- Main Content Area -->
+        <main id="view-list" class="flex-1 p-4 flex flex-col gap-4 overflow-y-auto">
+            <!-- Search Bar -->
+            <div class="relative flex flex-col gap-2">
+                <input type="text" id="search-input" placeholder="Search by Unit or Color..." class="w-full p-3 rounded-lg border border-slate-300 focus:ring-2 focus:ring-blue-500 focus:border-blue-500 outline-none transition-all">
+            </div>
+
+            <!-- Keys List -->
+            <div id="keys-container" class="flex flex-col gap-3 pb-20">
+                <!-- Keys will be injected here via JS -->
+                <p id="loading-text" class="text-center text-slate-500 py-10">Loading keys...</p>
+            </div>
+
+            <!-- FAB (Floating Action Button) -->
+            <button id="fab-add" class="fixed bottom-6 right-6 md:absolute md:bottom-6 md:right-6 bg-blue-600 text-white w-14 h-14 rounded-full shadow-xl flex items-center justify-center text-3xl hover:bg-blue-700 transition-transform active:scale-95 z-20">
+                +
+            </button>
+        </main>
+
+        <!-- Add Key View (Hidden by default) -->
+        <main id="view-add" class="flex-1 p-4 hidden flex-col gap-5 overflow-y-auto bg-slate-50">
+            <h2 class="text-lg font-bold text-slate-800">Catalog New Key</h2>
+            
+            <div class="flex flex-col gap-1">
+                <label class="text-sm font-semibold text-slate-700">Unit Number / Name</label>
+                <input type="text" id="input-unit" class="p-3 rounded-lg border border-slate-300 w-full" placeholder="e.g. Apt 4B">
+            </div>
+
+            <div class="flex flex-col gap-1">
+                <label class="text-sm font-semibold text-slate-700">Tag Color</label>
+                <div class="flex flex-wrap gap-2 items-center" id="color-picker-container">
+                    <button type="button" class="color-swatch w-8 h-8 rounded-full border-2 border-slate-300 active-color" data-color="#ef4444" style="background-color: #ef4444;" aria-label="Red"></button>
+                    <button type="button" class="color-swatch w-8 h-8 rounded-full border-2 border-slate-300" data-color="#3b82f6" style="background-color: #3b82f6;" aria-label="Blue"></button>
+                    <button type="button" class="color-swatch w-8 h-8 rounded-full border-2 border-slate-300" data-color="#22c55e" style="background-color: #22c55e;" aria-label="Green"></button>
+                    <button type="button" class="color-swatch w-8 h-8 rounded-full border-2 border-slate-300" data-color="#eab308" style="background-color: #eab308;" aria-label="Yellow"></button>
+                    <button type="button" class="color-swatch w-8 h-8 rounded-full border-2 border-slate-300" data-color="#ffffff" style="background-color: #ffffff;" aria-label="White"></button>
+                    <button type="button" class="color-swatch w-8 h-8 rounded-full border-2 border-slate-300" data-color="#000000" style="background-color: #000000;" aria-label="Black"></button>
+                    <button type="button" class="color-swatch w-8 h-8 rounded-full border-2 border-slate-300" data-color="#94a3b8" style="background-color: #94a3b8;" aria-label="Silver"></button>
+                    <div class="relative w-8 h-8 rounded-full border-2 border-slate-300 overflow-hidden flex items-center justify-center bg-gradient-to-tr from-red-500 via-green-500 to-blue-500 cursor-pointer">
+                        <input type="color" id="input-color-custom" class="absolute inset-0 w-full h-full opacity-0 cursor-pointer" value="#a855f7">
+                    </div>
+                    <input type="hidden" id="input-color-value" value="#ef4444">
+                </div>
+            </div>
+
+            <div class="flex flex-col gap-1">
+                <label class="text-sm font-semibold text-slate-700">Location (Side)</label>
+                <div class="flex gap-2">
+                    <button class="side-btn flex-1 py-2 rounded-lg border-2 border-blue-600 bg-blue-50 text-blue-700 font-bold" data-side="Left">Left Page</button>
+                    <button class="side-btn flex-1 py-2 rounded-lg border-2 border-slate-200 bg-white text-slate-600 font-bold" data-side="Right">Right Page</button>
+                </div>
+            </div>
+
+            <div class="flex flex-col gap-1">
+                <label class="text-sm font-semibold text-slate-700">Quadrant (Tap to select)</label>
+                <div id="quadrant-grid" class="grid grid-cols-3 gap-2 bg-slate-200 p-2 rounded-lg">
+                    <!-- Generated via JS -->
+                </div>
+            </div>
+
+            <div class="flex flex-col gap-1">
+                <label class="text-sm font-semibold text-slate-700">Photo Capture</label>
+                <div class="relative w-full bg-black rounded-lg overflow-hidden aspect-[4/3] flex items-center justify-center">
+                    <video id="camera-video" class="absolute inset-0 w-full h-full object-cover" autoplay playsinline></video>
+                    <img id="camera-preview" class="absolute inset-0 w-full h-full object-cover hidden" alt="Captured preview">
+                    <button type="button" id="btn-capture" class="absolute bottom-4 left-1/2 -translate-x-1/2 w-14 h-14 bg-white rounded-full border-4 border-slate-300 shadow-lg active:scale-95 transition-transform z-10"></button>
+                    <button type="button" id="btn-retake" class="absolute top-4 right-4 bg-slate-900/70 text-white px-3 py-1 rounded text-sm font-medium hidden z-10">Retake</button>
+                </div>
+                <canvas id="camera-canvas" class="hidden"></canvas>
+            </div>
+
+            <button id="btn-save" class="w-full bg-slate-900 text-white py-4 rounded-lg font-bold text-lg mt-4 shadow-md active:scale-95 transition-transform">
+                Save Key to Database
+            </button>
+        </main>
+
+        <!-- Photo Modal -->
+        <div id="photo-modal" class="fixed inset-0 bg-black/90 z-50 hidden flex-col items-center justify-center p-4">
+            <button id="btn-close-modal" class="absolute top-4 right-4 text-white text-xl font-bold bg-white/20 w-10 h-10 rounded-full">&times;</button>
+            <img id="modal-img" src="" alt="Full size key" class="max-w-full max-h-[80vh] object-contain rounded">
+            <p id="modal-caption" class="text-white mt-4 text-lg font-medium"></p>
+        </div>
+
+    </div>
+
+    <script src="app.js"></script>
+</body>
+</html>

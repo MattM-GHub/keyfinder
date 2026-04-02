@@ -1,0 +1,65 @@
+/* 
+  No-Assumption Firewall: 
+  All layout is handled by Tailwind utility classes in HTML (Flexbox/Grid).
+  Only specific component overrides and custom states are placed here.
+  No generic selectors (e.g., 'div {}') are used.
+*/
+
+.quadrant-btn {
+    background-color: #ffffff;
+    border: 2px solid #cbd5e1;
+    border-radius: 0.5rem;
+    font-weight: 600;
+    color: #64748b;
+    transition: all 0.2s ease-in-out;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+}
+
+.quadrant-btn.active-quadrant {
+    background-color: #eff6ff;
+    border-color: #2563eb;
+    color: #1d4ed8;
+    transform: scale(0.95);
+}
+
+.color-swatch.active-color {
+    border-color: #0f172a;
+    transform: scale(1.1);
+    box-shadow: 0 0 0 2px #ffffff inset;
+}
+
+.key-card {
+    display: flex;
+    align-items: center;
+    gap: 1rem;
+    padding: 0.75rem;
+    background-color: #ffffff;
+    border: 1px solid #e2e8f0;
+    border-radius: 0.75rem;
+    box-shadow: 0 1px 2px 0 rgba(0, 0, 0, 0.05);
+    cursor: pointer;
+    transition: transform 0.1s ease;
+}
+
+.key-card:active {
+    transform: scale(0.98);
+}
+
+.key-thumbnail {
+    width: 4rem;
+    height: 4rem;
+    border-radius: 0.5rem;
+    object-fit: cover;
+    background-color: #f1f5f9;
+}
+
+.tag-color-indicator {
+    display: inline-block;
+    width: 0.75rem;
+    height: 0.75rem;
+    border-radius: 9999px;
+    border: 1px solid rgba(0,0,0,0.1);
+    margin-right: 0.25rem;
+}
