@@ -67,6 +67,7 @@ document.addEventListener('DOMContentLoaded', () => {
 
     // --- INITIALIZATION ---
     initGrid();
+    loadCachedKeys();
     fetchKeys();
 
     // --- EVENT LISTENERS ---
@@ -181,21 +182,58 @@ document.addEventListener('DOMContentLoaded', () => {
         }
     }
 
+    function loadCachedKeys() {
+        const cached = localStorage.getItem('keysCache');
+        if (cached) {
+            try {
+                allKeys = JSON.parse(cached);
+                renderKeys(allKeys);
+            } catch (e) {
+                console.error("Cache parse error", e);
+            }
+        }
+    }
+
     async function fetchKeys() {
         if (!keysContainer || !loadingText) return;
         
-        const { data, error } = await supabaseClient
-            .from('keys')
-            .select('*')
-            .order('created_at', { ascending: false });
+        const lastSync = localStorage.getItem('lastSyncTime');
+        const syncStartTime = new Date().toISOString();
+        
+        let query = supabaseClient.from('keys').select('*');
+        if (lastSync) {
+            query = query.gt('updated_at', lastSync); // Delta Sync: Only fetch what changed
+        }
+
+        const { data, error } = await query;
 
         if (error) {
-            loadingText.textContent = "Error loading keys.";
+            if (allKeys.length === 0) loadingText.textContent = "Error loading keys.";
             console.error(error);
             return;
         }
 
-        allKeys = data;
+        if (data && data.length > 0) {
+            // Merge new/updated data into allKeys
+            data.forEach(updatedKey => {
+                const index = allKeys.findIndex(k => k.id === updatedKey.id);
+                if (index !== -1) {
+                    allKeys[index] = updatedKey;
+                } else {
+                    allKeys.push(updatedKey);
+                }
+            });
+        }
+
+        // Filter out soft-deleted keys
+        allKeys = allKeys.filter(k => k.deleted !== true);
+        
+        // Sort by created_at descending
+        allKeys.sort((a, b) => new Date(b.created_at) - new Date(a.created_at));
+
+        localStorage.setItem('keysCache', JSON.stringify(allKeys));
+        localStorage.setItem('lastSyncTime', syncStartTime);
+        
         renderKeys(allKeys);
     }
 
@@ -360,6 +398,8 @@ document.addEventListener('DOMContentLoaded', () => {
                 allKeys[index].color = newColor;
             }
             
+            localStorage.setItem('keysCache', JSON.stringify(allKeys));
+            
             // Refresh UI
             renderKeys(allKeys);
             openModal(allKeys[index]); // Re-open with new data
@@ -384,10 +424,10 @@ document.addEventListener('DOMContentLoaded', () => {
         btnModalDelete.disabled = true;
 
         try {
-            // Delete from Database
+            // Soft Delete from Database to allow Delta Sync to catch it
             const { error: dbError } = await supabaseClient
                 .from('keys')
-                .delete()
+                .update({ deleted: true })
                 .eq('id', currentActiveKey.id);
 
             if (dbError) throw dbError;
@@ -401,8 +441,9 @@ document.addEventListener('DOMContentLoaded', () => {
                 console.warn("Could not delete image from storage, but DB record was removed.", storageErr);
             }
 
-            // Remove from local state
+            // Remove from local state and update cache
             allKeys = allKeys.filter(k => k.id !== currentActiveKey.id);
+            localStorage.setItem('keysCache', JSON.stringify(allKeys));
             
             // Refresh UI
             renderKeys(allKeys);
@@ -444,7 +485,7 @@ document.addEventListener('DOMContentLoaded', () => {
         const ctx = cameraCanvas.getContext('2d');
         let width = cameraVideo.videoWidth;
         let height = cameraVideo.videoHeight;
-        const MAX_WIDTH = 1200;
+        const MAX_WIDTH = 800;
         
         if (width > MAX_WIDTH) {
             height = Math.round((height * MAX_WIDTH) / width);
@@ -465,7 +506,7 @@ document.addEventListener('DOMContentLoaded', () => {
             btnCapture.classList.add('hidden');
             btnRetake.classList.remove('hidden');
             cameraVideo.classList.add('hidden');
-        }, 'image/jpeg', 0.8);
+        }, 'image/webp', 0.8);
     }
 
     function retakePhoto() {
@@ -533,13 +574,13 @@ document.addEventListener('DOMContentLoaded', () => {
 
             // 2. Upload to Supabase Storage
             btnSave.textContent = "Uploading...";
-            const fileName = `${Date.now()}_${Math.random().toString(36).substring(7)}.jpg`;
+            const fileName = `${Date.now()}_${Math.random().toString(36).substring(7)}.webp`;
             
             const { data: uploadData, error: uploadError } = await supabaseClient
                 .storage
                 .from('key_images')
                 .upload(fileName, compressedBlob, {
-                    contentType: 'image/jpeg'
+                    contentType: 'image/webp'
                 });
 
             if (uploadError) throw uploadError;
