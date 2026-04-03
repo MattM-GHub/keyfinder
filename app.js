@@ -3,8 +3,8 @@ document.addEventListener('DOMContentLoaded', () => {
     
     // --- SUPABASE CONFIGURATION ---
     // PASTE YOUR SUPABASE URL AND ANON KEY HERE
-    const SUPABASE_URL = 'https://mrniuccqeumeysfekjau.supabase.co';
-    const SUPABASE_ANON_KEY = 'sb_publishable_vlB_HUlueptkhOvwwkenrg_RuT0SWMo';
+    const SUPABASE_URL = 'https://YOUR_PROJECT_ID.supabase.co';
+    const SUPABASE_ANON_KEY = 'YOUR_ANON_KEY';
     
     // Safety check: Ensure Supabase script loaded
     if (typeof supabase === 'undefined') {
@@ -24,8 +24,6 @@ document.addEventListener('DOMContentLoaded', () => {
     
     const inputUnit = document.getElementById('input-unit');
     const inputColorValue = document.getElementById('input-color-value');
-    const colorSwatches = document.querySelectorAll('.color-swatch');
-    const inputColorCustom = document.getElementById('input-color-custom');
     
     const cameraVideo = document.getElementById('camera-video');
     const cameraPreview = document.getElementById('camera-preview');
@@ -37,6 +35,7 @@ document.addEventListener('DOMContentLoaded', () => {
     const quadrantGrid = document.getElementById('quadrant-grid');
     const sideBtns = document.querySelectorAll('.side-btn');
 
+    // Modal Elements
     const photoModal = document.getElementById('photo-modal');
     const modalImg = document.getElementById('modal-img');
     const btnCloseModal = document.getElementById('btn-close-modal');
@@ -54,60 +53,46 @@ document.addEventListener('DOMContentLoaded', () => {
     const btnModalSave = document.getElementById('btn-modal-save');
     const btnModalCancel = document.getElementById('btn-modal-cancel');
     const modalEditUnit = document.getElementById('modal-edit-unit');
-    const modalEditColor = document.getElementById('modal-edit-color');
-    const modalEditColorHex = document.getElementById('modal-edit-color-hex');
+    const modalEditColorValue = document.getElementById('modal-edit-color-value');
+    const modalSideBtns = document.querySelectorAll('.modal-side-btn');
 
     // --- STATE ---
     let currentSide = 'Front Cover';
     let currentQuadrant = 1;
+    let editCurrentSide = 'Front Cover';
+    let editCurrentQuadrant = 1;
     let allKeys =[];
     let cameraStream = null;
     let capturedBlob = null;
     let currentActiveKey = null;
+    let customColors = JSON.parse(localStorage.getItem('customColors') || '[]');
+
+    const defaultColors =[
+        { hex: '#ef4444', name: 'Red' }, { hex: '#fca5a5', name: 'Light Red' },
+        { hex: '#3b82f6', name: 'Blue' }, { hex: '#93c5fd', name: 'Light Blue' },
+        { hex: '#22c55e', name: 'Green' }, { hex: '#86efac', name: 'Light Green' },
+        { hex: '#eab308', name: 'Yellow' }, { hex: '#fde047', name: 'Light Yellow' },
+        { hex: '#f97316', name: 'Orange' }, { hex: '#fdba74', name: 'Light Orange' },
+        { hex: '#a855f7', name: 'Purple' }, { hex: '#d8b4fe', name: 'Light Purple' },
+        { hex: '#ec4899', name: 'Pink' }, { hex: '#f9a8d4', name: 'Light Pink' },
+        { hex: '#ffffff', name: 'White' }, { hex: '#9ca3af', name: 'Gray' },
+        { hex: '#000000', name: 'Black' }, { hex: '#94a3b8', name: 'Silver' }
+    ];
 
     // --- INITIALIZATION ---
     initGrid();
+    renderColorPickers();
     loadCachedKeys();
     fetchKeys();
 
     // --- EVENT LISTENERS ---
-    if (fabAdd) {
-        fabAdd.addEventListener('click', () => toggleView(true));
-    }
-    if (btnShowAdd) {
-        btnShowAdd.addEventListener('click', () => toggleView(false));
-    }
-    if (searchInput) {
-        searchInput.addEventListener('input', (e) => filterKeys(e.target.value));
-    }
-    if (btnSave) {
-        btnSave.addEventListener('click', handleSaveKey);
-    }
+    if (fabAdd) fabAdd.addEventListener('click', () => toggleView(true));
+    if (btnShowAdd) btnShowAdd.addEventListener('click', () => toggleView(false));
+    if (searchInput) searchInput.addEventListener('input', (e) => filterKeys(e.target.value));
+    if (btnSave) btnSave.addEventListener('click', handleSaveKey);
     
-    if (colorSwatches) {
-        colorSwatches.forEach(swatch => {
-            swatch.addEventListener('click', (e) => {
-                colorSwatches.forEach(s => s.classList.remove('active-color'));
-                e.target.classList.add('active-color');
-                if (inputColorValue) inputColorValue.value = e.target.getAttribute('data-color');
-            });
-        });
-    }
-
-    if (inputColorCustom) {
-        inputColorCustom.addEventListener('input', (e) => {
-            colorSwatches.forEach(s => s.classList.remove('active-color'));
-            if (inputColorValue) inputColorValue.value = e.target.value;
-        });
-    }
-
-    if (btnCapture) {
-        btnCapture.addEventListener('click', capturePhoto);
-    }
-
-    if (btnRetake) {
-        btnRetake.addEventListener('click', retakePhoto);
-    }
+    if (btnCapture) btnCapture.addEventListener('click', capturePhoto);
+    if (btnRetake) btnRetake.addEventListener('click', retakePhoto);
 
     if (btnCloseModal) {
         btnCloseModal.addEventListener('click', () => {
@@ -119,12 +104,8 @@ document.addEventListener('DOMContentLoaded', () => {
     if (btnModalCancel) btnModalCancel.addEventListener('click', disableEditMode);
     if (btnModalSave) btnModalSave.addEventListener('click', saveEdit);
     if (btnModalDelete) btnModalDelete.addEventListener('click', deleteKey);
-    if (modalEditColor) {
-        modalEditColor.addEventListener('input', (e) => {
-            if (modalEditColorHex) modalEditColorHex.textContent = e.target.value.toUpperCase();
-        });
-    }
 
+    // Add View Side Buttons
     sideBtns.forEach(btn => {
         btn.addEventListener('click', (e) => {
             sideBtns.forEach(b => {
@@ -138,7 +119,91 @@ document.addEventListener('DOMContentLoaded', () => {
         });
     });
 
+    // Edit View Side Buttons
+    if (modalSideBtns) {
+        modalSideBtns.forEach(btn => {
+            btn.addEventListener('click', (e) => {
+                modalSideBtns.forEach(b => {
+                    b.classList.remove('border-blue-600', 'bg-blue-50', 'text-blue-700');
+                    b.classList.add('border-slate-200', 'bg-white', 'text-slate-600');
+                });
+                const target = e.target;
+                target.classList.remove('border-slate-200', 'bg-white', 'text-slate-600');
+                target.classList.add('border-blue-600', 'bg-blue-50', 'text-blue-700');
+                editCurrentSide = target.getAttribute('data-side');
+            });
+        });
+    }
+
     // --- FUNCTIONS ---
+
+    function getColorName(hex) {
+        if (!hex) return 'Custom';
+        const allColors = [...defaultColors, ...customColors];
+        const found = allColors.find(c => c.hex.toLowerCase() === hex.toLowerCase());
+        return found ? found.name : 'Custom';
+    }
+
+    function renderColorPickers() {
+        const containers =[
+            { el: document.getElementById('color-picker-container'), input: document.getElementById('input-color-value') },
+            { el: document.getElementById('modal-edit-color-container'), input: document.getElementById('modal-edit-color-value') }
+        ];
+        
+        const allColors = [...defaultColors, ...customColors];
+        
+        containers.forEach(containerObj => {
+            if (!containerObj.el) return;
+            
+            // DO NO HARM: Clear safely
+            while (containerObj.el.firstChild) {
+                containerObj.el.removeChild(containerObj.el.firstChild);
+            }
+            
+            allColors.forEach(color => {
+                const btn = document.createElement('button');
+                btn.type = 'button';
+                btn.className = 'color-swatch w-8 h-8 rounded-full border-2 border-slate-300 shrink-0';
+                btn.style.backgroundColor = color.hex;
+                btn.title = color.name;
+                
+                if (containerObj.input && containerObj.input.value.toLowerCase() === color.hex.toLowerCase()) {
+                    btn.classList.add('active-color');
+                }
+                
+                btn.addEventListener('click', () => {
+                    Array.from(containerObj.el.children).forEach(c => c.classList.remove('active-color'));
+                    btn.classList.add('active-color');
+                    if (containerObj.input) containerObj.input.value = color.hex;
+                });
+                
+                containerObj.el.appendChild(btn);
+            });
+            
+            // Add custom color button
+            const addBtnWrap = document.createElement('div');
+            addBtnWrap.className = 'relative w-8 h-8 rounded-full border-2 border-slate-300 overflow-hidden flex items-center justify-center bg-gradient-to-tr from-red-500 via-green-500 to-blue-500 cursor-pointer shrink-0';
+            addBtnWrap.title = "Add Custom Color";
+            
+            const addInput = document.createElement('input');
+            addInput.type = 'color';
+            addInput.className = 'absolute inset-0 w-full h-full opacity-0 cursor-pointer';
+            
+            addInput.addEventListener('change', (e) => {
+                const newHex = e.target.value;
+                const newName = prompt("Enter a name for this custom color:");
+                if (newName && newName.trim() !== "") {
+                    customColors.push({ hex: newHex, name: newName.trim() });
+                    localStorage.setItem('customColors', JSON.stringify(customColors));
+                    if (containerObj.input) containerObj.input.value = newHex;
+                    renderColorPickers(); // Re-render to show new color
+                }
+            });
+            
+            addBtnWrap.appendChild(addInput);
+            containerObj.el.appendChild(addBtnWrap);
+        });
+    }
 
     function toggleView(showAdd) {
         if (!viewList || !viewAdd || !fabAdd || !btnShowAdd) return;
@@ -164,21 +229,39 @@ document.addEventListener('DOMContentLoaded', () => {
     }
 
     function initGrid() {
-        if (!quadrantGrid) return;
-        // DO NO HARM: Using createElement instead of innerHTML
-        for (let i = 1; i <= 16; i++) {
-            const btn = document.createElement('button');
-            btn.className = 'quadrant-btn';
-            btn.textContent = i;
-            if (i === 1) btn.classList.add('active-quadrant');
-            
-            btn.addEventListener('click', (e) => {
-                e.preventDefault();
-                document.querySelectorAll('.quadrant-btn').forEach(b => b.classList.remove('active-quadrant'));
-                btn.classList.add('active-quadrant');
-                currentQuadrant = i;
-            });
-            quadrantGrid.appendChild(btn);
+        if (quadrantGrid) {
+            // DO NO HARM: Using createElement instead of innerHTML
+            for (let i = 1; i <= 16; i++) {
+                const btn = document.createElement('button');
+                btn.className = 'quadrant-btn';
+                btn.textContent = i;
+                if (i === currentQuadrant) btn.classList.add('active-quadrant');
+                
+                btn.addEventListener('click', (e) => {
+                    e.preventDefault();
+                    Array.from(quadrantGrid.children).forEach(b => b.classList.remove('active-quadrant'));
+                    btn.classList.add('active-quadrant');
+                    currentQuadrant = i;
+                });
+                quadrantGrid.appendChild(btn);
+            }
+        }
+
+        const modalEditGrid = document.getElementById('modal-edit-quadrant-grid');
+        if (modalEditGrid) {
+            for (let i = 1; i <= 16; i++) {
+                const btn = document.createElement('button');
+                btn.className = 'quadrant-btn';
+                btn.textContent = i;
+                
+                btn.addEventListener('click', (e) => {
+                    e.preventDefault();
+                    Array.from(modalEditGrid.children).forEach(b => b.classList.remove('active-quadrant'));
+                    btn.classList.add('active-quadrant');
+                    editCurrentQuadrant = i;
+                });
+                modalEditGrid.appendChild(btn);
+            }
         }
     }
 
@@ -240,7 +323,7 @@ document.addEventListener('DOMContentLoaded', () => {
     function renderKeys(keysToRender) {
         if (!keysContainer || !loadingText) return;
         
-        // Clear existing (while avoiding generic innerHTML where possible, clearing children is standard)
+        // Clear existing
         while (keysContainer.firstChild) {
             keysContainer.removeChild(keysContainer.firstChild);
         }
@@ -252,7 +335,6 @@ document.addEventListener('DOMContentLoaded', () => {
         }
 
         keysToRender.forEach(key => {
-            // DO NO HARM: Building DOM elements safely
             const card = document.createElement('div');
             card.className = 'key-card';
             card.addEventListener('click', () => openModal(key));
@@ -293,13 +375,10 @@ document.addEventListener('DOMContentLoaded', () => {
             
             const colorDot = document.createElement('span');
             colorDot.className = 'tag-color-indicator';
-            // Use the saved hex code directly
             colorDot.style.backgroundColor = key.color || '#cbd5e1';
 
             const colorText = document.createElement('span');
-            // Attempt to find a name for default colors, otherwise show hex
-            const colorMapReverse = { '#ef4444': 'Red', '#3b82f6': 'Blue', '#22c55e': 'Green', '#eab308': 'Yellow', '#ffffff': 'White', '#000000': 'Black', '#94a3b8': 'Silver' };
-            colorText.textContent = colorMapReverse[key.color] || 'Custom';
+            colorText.textContent = getColorName(key.color);
 
             colorWrap.appendChild(colorDot);
             colorWrap.appendChild(colorText);
@@ -319,7 +398,7 @@ document.addEventListener('DOMContentLoaded', () => {
         const term = searchTerm.toLowerCase();
         const filtered = allKeys.filter(key => 
             key.unit.toLowerCase().includes(term) || 
-            key.color.toLowerCase().includes(term)
+            getColorName(key.color).toLowerCase().includes(term)
         );
         renderKeys(filtered);
     }
@@ -333,13 +412,11 @@ document.addEventListener('DOMContentLoaded', () => {
         modalSubtitle.textContent = `${key.side} - Quadrant ${key.quadrant}`;
         
         if (modalColorDot) modalColorDot.style.backgroundColor = key.color || '#cbd5e1';
-        
-        const colorMapReverse = { '#ef4444': 'Red', '#3b82f6': 'Blue', '#22c55e': 'Green', '#eab308': 'Yellow', '#ffffff': 'White', '#000000': 'Black', '#94a3b8': 'Silver' };
-        if (modalColorText) modalColorText.textContent = colorMapReverse[key.color] || 'Custom';
+        if (modalColorText) modalColorText.textContent = getColorName(key.color);
 
         // Generate Visual Map for Modal
         if (modalVisualMap) {
-            modalVisualMap.innerHTML = ''; // Safe here, just clearing empty divs
+            modalVisualMap.innerHTML = ''; // Safe here, clearing empty divs
             for(let i=1; i<=16; i++) {
                 const cell = document.createElement('div');
                 cell.className = `w-full h-full rounded-[2px] ${i === key.quadrant ? 'bg-blue-600 shadow-sm scale-110 z-10' : 'bg-white'}`;
@@ -358,8 +435,39 @@ document.addEventListener('DOMContentLoaded', () => {
         modalEditMode.classList.add('flex');
         
         if (modalEditUnit) modalEditUnit.value = currentActiveKey.unit;
-        if (modalEditColor) modalEditColor.value = currentActiveKey.color || '#ffffff';
-        if (modalEditColorHex) modalEditColorHex.textContent = (currentActiveKey.color || '#ffffff').toUpperCase();
+        
+        if (modalEditColorValue) {
+            modalEditColorValue.value = currentActiveKey.color || '#ffffff';
+            renderColorPickers(); // Re-render to set active state
+        }
+
+        // Set Edit Side
+        editCurrentSide = currentActiveKey.side || 'Front Cover';
+        if (modalSideBtns) {
+            modalSideBtns.forEach(b => {
+                if (b.getAttribute('data-side') === editCurrentSide) {
+                    b.classList.remove('border-slate-200', 'bg-white', 'text-slate-600');
+                    b.classList.add('border-blue-600', 'bg-blue-50', 'text-blue-700');
+                } else {
+                    b.classList.remove('border-blue-600', 'bg-blue-50', 'text-blue-700');
+                    b.classList.add('border-slate-200', 'bg-white', 'text-slate-600');
+                }
+            });
+        }
+
+        // Set Edit Quadrant
+        editCurrentQuadrant = currentActiveKey.quadrant || 1;
+        const modalEditGrid = document.getElementById('modal-edit-quadrant-grid');
+        if (modalEditGrid) {
+            Array.from(modalEditGrid.children).forEach((b, index) => {
+                if (index + 1 === editCurrentQuadrant) {
+                    b.classList.add('active-quadrant');
+                } else {
+                    b.classList.remove('active-quadrant');
+                }
+            });
+        }
+
         if (btnModalEdit) btnModalEdit.classList.add('hidden');
     }
 
@@ -372,10 +480,12 @@ document.addEventListener('DOMContentLoaded', () => {
     }
 
     async function saveEdit() {
-        if (!currentActiveKey || !modalEditUnit || !modalEditColor) return;
+        if (!currentActiveKey || !modalEditUnit || !modalEditColorValue) return;
         
         const newUnit = modalEditUnit.value.trim();
-        const newColor = modalEditColor.value;
+        const newColor = modalEditColorValue.value;
+        const newSide = editCurrentSide;
+        const newQuadrant = editCurrentQuadrant;
         
         if (!newUnit) return alert("Unit cannot be empty.");
 
@@ -386,7 +496,7 @@ document.addEventListener('DOMContentLoaded', () => {
         try {
             const { error } = await supabaseClient
                 .from('keys')
-                .update({ unit: newUnit, color: newColor })
+                .update({ unit: newUnit, color: newColor, side: newSide, quadrant: newQuadrant })
                 .eq('id', currentActiveKey.id);
 
             if (error) throw error;
@@ -396,6 +506,8 @@ document.addEventListener('DOMContentLoaded', () => {
             if (index !== -1) {
                 allKeys[index].unit = newUnit;
                 allKeys[index].color = newColor;
+                allKeys[index].side = newSide;
+                allKeys[index].quadrant = newQuadrant;
             }
             
             localStorage.setItem('keysCache', JSON.stringify(allKeys));
@@ -514,7 +626,7 @@ document.addEventListener('DOMContentLoaded', () => {
             btnCapture.classList.add('hidden');
             btnRetake.classList.remove('hidden');
             cameraVideo.classList.add('hidden');
-        }, 'image/webp', 0.3);
+        }, 'image/webp', 0.3); // <--- QUALITY REDUCED TO 0.3 FOR MAX STORAGE SAVINGS
     }
 
     function retakePhoto() {
@@ -524,41 +636,6 @@ document.addEventListener('DOMContentLoaded', () => {
         btnCapture.classList.remove('hidden');
         btnRetake.classList.add('hidden');
         cameraVideo.classList.remove('hidden');
-    }
-
-    // --- SMART IMAGE PROCESSING ---
-    function processImage(file) {
-        return new Promise((resolve, reject) => {
-            const reader = new FileReader();
-            reader.onload = (e) => {
-                const img = new Image();
-                img.onload = () => {
-                    const canvas = document.createElement('canvas');
-                    const MAX_WIDTH = 1200;
-                    let width = img.width;
-                    let height = img.height;
-
-                    if (width > MAX_WIDTH) {
-                        height = Math.round((height * MAX_WIDTH) / width);
-                        width = MAX_WIDTH;
-                    }
-
-                    canvas.width = width;
-                    canvas.height = height;
-                    const ctx = canvas.getContext('2d');
-                    ctx.drawImage(img, 0, 0, width, height);
-
-                    // Compress to JPEG quality 0.8
-                    canvas.toBlob((blob) => {
-                        resolve(blob);
-                    }, 'image/jpeg', 0.8);
-                };
-                img.onerror = reject;
-                img.src = e.target.result;
-            };
-            reader.onerror = reject;
-            reader.readAsDataURL(file);
-        });
     }
 
     async function handleSaveKey() {
@@ -616,7 +693,7 @@ document.addEventListener('DOMContentLoaded', () => {
             if (insertError) throw insertError;
 
             // 5. Success cleanup
-            alert("Key saved successfully!");
+            // We don't alert here to make batch entry faster
             toggleView(false);
             fetchKeys(); // Refresh list
 
@@ -628,5 +705,10 @@ document.addEventListener('DOMContentLoaded', () => {
             btnSave.disabled = false;
             btnSave.classList.remove('opacity-50');
         }
+    }
+
+    // Register Service Worker for Offline App Shell
+    if ('serviceWorker' in navigator) {
+        navigator.serviceWorker.register('./sw.js').catch(err => console.error('SW registration failed:', err));
     }
 });
