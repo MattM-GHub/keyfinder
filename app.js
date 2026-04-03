@@ -483,18 +483,26 @@ document.addEventListener('DOMContentLoaded', () => {
         if (!cameraVideo || !cameraCanvas || !cameraPreview || !btnCapture || !btnRetake) return;
         
         const ctx = cameraCanvas.getContext('2d');
-        let width = cameraVideo.videoWidth;
-        let height = cameraVideo.videoHeight;
-        const MAX_WIDTH = 800;
+        const videoWidth = cameraVideo.videoWidth;
+        const videoHeight = cameraVideo.videoHeight;
         
-        if (width > MAX_WIDTH) {
-            height = Math.round((height * MAX_WIDTH) / width);
-            width = MAX_WIDTH;
-        }
+        // Determine the shortest side to make a perfect square crop from the center
+        const minSide = Math.min(videoWidth, videoHeight);
+        const startX = (videoWidth - minSide) / 2;
+        const startY = (videoHeight - minSide) / 2;
+
+        const MAX_SIZE = 800;
+        const finalSize = Math.min(minSide, MAX_SIZE);
         
-        cameraCanvas.width = width;
-        cameraCanvas.height = height;
-        ctx.drawImage(cameraVideo, 0, 0, width, height);
+        cameraCanvas.width = finalSize;
+        cameraCanvas.height = finalSize;
+        
+        // Draw only the center square of the video (matches Tailwind's object-cover)
+        ctx.drawImage(
+            cameraVideo, 
+            startX, startY, minSide, minSide, // Source crop coordinates & size
+            0, 0, finalSize, finalSize        // Destination canvas coordinates & size
+        );
         
         // Convert to blob for upload immediately
         cameraCanvas.toBlob((blob) => {
