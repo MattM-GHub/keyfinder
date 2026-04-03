@@ -52,9 +52,18 @@
             <div class="flex flex-col gap-1">
                 <label class="text-sm font-semibold text-slate-700">Tag Color</label>
                 <div class="flex flex-wrap gap-2 items-center" id="color-picker-container">
-                    <!-- Generated via JS -->
+                    <button type="button" class="color-swatch w-8 h-8 rounded-full border-2 border-slate-300 active-color" data-color="#ef4444" style="background-color: #ef4444;" aria-label="Red"></button>
+                    <button type="button" class="color-swatch w-8 h-8 rounded-full border-2 border-slate-300" data-color="#3b82f6" style="background-color: #3b82f6;" aria-label="Blue"></button>
+                    <button type="button" class="color-swatch w-8 h-8 rounded-full border-2 border-slate-300" data-color="#22c55e" style="background-color: #22c55e;" aria-label="Green"></button>
+                    <button type="button" class="color-swatch w-8 h-8 rounded-full border-2 border-slate-300" data-color="#eab308" style="background-color: #eab308;" aria-label="Yellow"></button>
+                    <button type="button" class="color-swatch w-8 h-8 rounded-full border-2 border-slate-300" data-color="#ffffff" style="background-color: #ffffff;" aria-label="White"></button>
+                    <button type="button" class="color-swatch w-8 h-8 rounded-full border-2 border-slate-300" data-color="#000000" style="background-color: #000000;" aria-label="Black"></button>
+                    <button type="button" class="color-swatch w-8 h-8 rounded-full border-2 border-slate-300" data-color="#94a3b8" style="background-color: #94a3b8;" aria-label="Silver"></button>
+                    <div class="relative w-8 h-8 rounded-full border-2 border-slate-300 overflow-hidden flex items-center justify-center bg-gradient-to-tr from-red-500 via-green-500 to-blue-500 cursor-pointer">
+                        <input type="color" id="input-color-custom" class="absolute inset-0 w-full h-full opacity-0 cursor-pointer" value="#a855f7">
+                    </div>
+                    <input type="hidden" id="input-color-value" value="#ef4444">
                 </div>
-                <input type="hidden" id="input-color-value" value="#ef4444">
             </div>
 
             <div class="flex flex-col gap-1">
@@ -121,25 +130,11 @@
                         <input type="text" id="modal-edit-unit" class="w-full p-3 border border-slate-300 rounded-lg mt-1 bg-slate-50">
                     </div>
                     <div>
-                        <label class="text-xs font-bold text-slate-500 uppercase">Location (Page)</label>
-                        <div class="flex gap-2 mt-1">
-                            <button class="modal-side-btn flex-1 py-2 rounded-lg border-2 border-slate-200 bg-white text-slate-600 font-bold text-xs sm:text-sm" data-side="Front Cover">Front Cover</button>
-                            <button class="modal-side-btn flex-1 py-2 rounded-lg border-2 border-slate-200 bg-white text-slate-600 font-bold text-xs sm:text-sm" data-side="Middle Leaf">Middle Leaf</button>
-                            <button class="modal-side-btn flex-1 py-2 rounded-lg border-2 border-slate-200 bg-white text-slate-600 font-bold text-xs sm:text-sm" data-side="Back Cover">Back Cover</button>
+                        <label class="text-xs font-bold text-slate-500 uppercase">Color (Hex)</label>
+                        <div class="flex gap-2 items-center mt-1">
+                            <input type="color" id="modal-edit-color" class="w-12 h-12 p-1 border border-slate-300 rounded-lg cursor-pointer shrink-0">
+                            <span id="modal-edit-color-hex" class="text-slate-600 font-mono text-sm"></span>
                         </div>
-                    </div>
-                    <div>
-                        <label class="text-xs font-bold text-slate-500 uppercase">Quadrant</label>
-                        <div id="modal-edit-quadrant-grid" class="grid grid-cols-4 gap-2 bg-slate-200 p-2 rounded-lg aspect-square mt-1">
-                            <!-- Generated via JS -->
-                        </div>
-                    </div>
-                    <div>
-                        <label class="text-xs font-bold text-slate-500 uppercase">Color</label>
-                        <div class="flex flex-wrap gap-2 items-center mt-1" id="modal-edit-color-container">
-                            <!-- Generated via JS -->
-                        </div>
-                        <input type="hidden" id="modal-edit-color-value" value="#ffffff">
                     </div>
                     <div class="flex gap-2 mt-3">
                         <button id="btn-modal-save" class="flex-1 bg-blue-600 text-white py-3 rounded-lg font-bold shadow-md active:scale-95 transition-transform">Save Changes</button>
