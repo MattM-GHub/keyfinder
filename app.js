@@ -39,15 +39,31 @@ document.addEventListener('DOMContentLoaded', () => {
 
     const photoModal = document.getElementById('photo-modal');
     const modalImg = document.getElementById('modal-img');
-    const modalCaption = document.getElementById('modal-caption');
     const btnCloseModal = document.getElementById('btn-close-modal');
+    
+    const modalViewMode = document.getElementById('modal-view-mode');
+    const modalEditMode = document.getElementById('modal-edit-mode');
+    const modalTitle = document.getElementById('modal-title');
+    const modalSubtitle = document.getElementById('modal-subtitle');
+    const modalVisualMap = document.getElementById('modal-visual-map');
+    const modalColorDot = document.getElementById('modal-color-dot');
+    const modalColorText = document.getElementById('modal-color-text');
+    
+    const btnModalEdit = document.getElementById('btn-modal-edit');
+    const btnModalDelete = document.getElementById('btn-modal-delete');
+    const btnModalSave = document.getElementById('btn-modal-save');
+    const btnModalCancel = document.getElementById('btn-modal-cancel');
+    const modalEditUnit = document.getElementById('modal-edit-unit');
+    const modalEditColor = document.getElementById('modal-edit-color');
+    const modalEditColorHex = document.getElementById('modal-edit-color-hex');
 
     // --- STATE ---
-    let currentSide = 'Left';
+    let currentSide = 'Front Cover';
     let currentQuadrant = 1;
     let allKeys =[];
     let cameraStream = null;
     let capturedBlob = null;
+    let currentActiveKey = null;
 
     // --- INITIALIZATION ---
     initGrid();
@@ -98,6 +114,16 @@ document.addEventListener('DOMContentLoaded', () => {
         });
     }
 
+    if (btnModalEdit) btnModalEdit.addEventListener('click', enableEditMode);
+    if (btnModalCancel) btnModalCancel.addEventListener('click', disableEditMode);
+    if (btnModalSave) btnModalSave.addEventListener('click', saveEdit);
+    if (btnModalDelete) btnModalDelete.addEventListener('click', deleteKey);
+    if (modalEditColor) {
+        modalEditColor.addEventListener('input', (e) => {
+            if (modalEditColorHex) modalEditColorHex.textContent = e.target.value.toUpperCase();
+        });
+    }
+
     sideBtns.forEach(btn => {
         btn.addEventListener('click', (e) => {
             sideBtns.forEach(b => {
@@ -139,7 +165,7 @@ document.addEventListener('DOMContentLoaded', () => {
     function initGrid() {
         if (!quadrantGrid) return;
         // DO NO HARM: Using createElement instead of innerHTML
-        for (let i = 1; i <= 9; i++) {
+        for (let i = 1; i <= 16; i++) {
             const btn = document.createElement('button');
             btn.className = 'quadrant-btn';
             btn.textContent = i;
@@ -206,9 +232,23 @@ document.addEventListener('DOMContentLoaded', () => {
             title.className = 'font-bold text-slate-800 text-lg leading-tight';
             title.textContent = key.unit;
 
-            const location = document.createElement('p');
-            location.className = 'text-sm text-slate-500';
-            location.textContent = `${key.side} Side - Quadrant ${key.quadrant}`;
+            const locationWrap = document.createElement('div');
+            locationWrap.className = 'flex items-center gap-2 mt-1';
+
+            const miniGrid = document.createElement('div');
+            miniGrid.className = 'grid grid-cols-4 gap-[1px] w-5 h-5 bg-slate-300 p-[1px] rounded-[3px] shrink-0';
+            for(let i=1; i<=16; i++) {
+                const cell = document.createElement('div');
+                cell.className = `w-full h-full rounded-[1px] ${i === key.quadrant ? 'bg-blue-600' : 'bg-white'}`;
+                miniGrid.appendChild(cell);
+            }
+
+            const locationText = document.createElement('p');
+            locationText.className = 'text-sm text-slate-500';
+            locationText.textContent = `${key.side} - Q${key.quadrant}`;
+
+            locationWrap.appendChild(miniGrid);
+            locationWrap.appendChild(locationText);
 
             const colorWrap = document.createElement('div');
             colorWrap.className = 'text-xs text-slate-600 font-medium mt-1 flex items-center';
@@ -227,7 +267,7 @@ document.addEventListener('DOMContentLoaded', () => {
             colorWrap.appendChild(colorText);
 
             infoDiv.appendChild(title);
-            infoDiv.appendChild(location);
+            infoDiv.appendChild(locationWrap);
             infoDiv.appendChild(colorWrap);
 
             card.appendChild(img);
@@ -247,10 +287,134 @@ document.addEventListener('DOMContentLoaded', () => {
     }
 
     function openModal(key) {
-        if (!photoModal || !modalImg || !modalCaption) return;
+        if (!photoModal || !modalImg || !modalTitle) return;
+        currentActiveKey = key;
+        
         modalImg.src = key.image_url;
-        modalCaption.textContent = `${key.unit} - ${key.side} Q${key.quadrant} (${key.color})`;
+        modalTitle.textContent = key.unit;
+        modalSubtitle.textContent = `${key.side} - Quadrant ${key.quadrant}`;
+        
+        if (modalColorDot) modalColorDot.style.backgroundColor = key.color || '#cbd5e1';
+        
+        const colorMapReverse = { '#ef4444': 'Red', '#3b82f6': 'Blue', '#22c55e': 'Green', '#eab308': 'Yellow', '#ffffff': 'White', '#000000': 'Black', '#94a3b8': 'Silver' };
+        if (modalColorText) modalColorText.textContent = colorMapReverse[key.color] || 'Custom';
+
+        // Generate Visual Map for Modal
+        if (modalVisualMap) {
+            modalVisualMap.innerHTML = ''; // Safe here, just clearing empty divs
+            for(let i=1; i<=16; i++) {
+                const cell = document.createElement('div');
+                cell.className = `w-full h-full rounded-[2px] ${i === key.quadrant ? 'bg-blue-600 shadow-sm scale-110 z-10' : 'bg-white'}`;
+                modalVisualMap.appendChild(cell);
+            }
+        }
+
+        disableEditMode();
         photoModal.style.display = 'flex';
+    }
+
+    function enableEditMode() {
+        if (!currentActiveKey || !modalViewMode || !modalEditMode) return;
+        modalViewMode.classList.add('hidden');
+        modalEditMode.classList.remove('hidden');
+        modalEditMode.classList.add('flex');
+        
+        if (modalEditUnit) modalEditUnit.value = currentActiveKey.unit;
+        if (modalEditColor) modalEditColor.value = currentActiveKey.color || '#ffffff';
+        if (modalEditColorHex) modalEditColorHex.textContent = (currentActiveKey.color || '#ffffff').toUpperCase();
+        if (btnModalEdit) btnModalEdit.classList.add('hidden');
+    }
+
+    function disableEditMode() {
+        if (!modalViewMode || !modalEditMode) return;
+        modalEditMode.classList.add('hidden');
+        modalEditMode.classList.remove('flex');
+        modalViewMode.classList.remove('hidden');
+        if (btnModalEdit) btnModalEdit.classList.remove('hidden');
+    }
+
+    async function saveEdit() {
+        if (!currentActiveKey || !modalEditUnit || !modalEditColor) return;
+        
+        const newUnit = modalEditUnit.value.trim();
+        const newColor = modalEditColor.value;
+        
+        if (!newUnit) return alert("Unit cannot be empty.");
+
+        const originalText = btnModalSave.textContent;
+        btnModalSave.textContent = "Saving...";
+        btnModalSave.disabled = true;
+
+        try {
+            const { error } = await supabaseClient
+                .from('keys')
+                .update({ unit: newUnit, color: newColor })
+                .eq('id', currentActiveKey.id);
+
+            if (error) throw error;
+
+            // Update local state
+            const index = allKeys.findIndex(k => k.id === currentActiveKey.id);
+            if (index !== -1) {
+                allKeys[index].unit = newUnit;
+                allKeys[index].color = newColor;
+            }
+            
+            // Refresh UI
+            renderKeys(allKeys);
+            openModal(allKeys[index]); // Re-open with new data
+            
+        } catch (err) {
+            console.error(err);
+            alert("Error updating key: " + err.message);
+        } finally {
+            btnModalSave.textContent = originalText;
+            btnModalSave.disabled = false;
+        }
+    }
+
+    async function deleteKey() {
+        if (!currentActiveKey) return;
+        
+        const confirmed = confirm(`Are you sure you want to delete the key for ${currentActiveKey.unit}? This cannot be undone.`);
+        if (!confirmed) return;
+
+        const originalText = btnModalDelete.textContent;
+        btnModalDelete.textContent = "Deleting...";
+        btnModalDelete.disabled = true;
+
+        try {
+            // Delete from Database
+            const { error: dbError } = await supabaseClient
+                .from('keys')
+                .delete()
+                .eq('id', currentActiveKey.id);
+
+            if (dbError) throw dbError;
+
+            // Extract filename from URL to delete from Storage (Optional but good practice)
+            try {
+                const urlParts = currentActiveKey.image_url.split('/');
+                const fileName = urlParts[urlParts.length - 1];
+                await supabaseClient.storage.from('key_images').remove([fileName]);
+            } catch (storageErr) {
+                console.warn("Could not delete image from storage, but DB record was removed.", storageErr);
+            }
+
+            // Remove from local state
+            allKeys = allKeys.filter(k => k.id !== currentActiveKey.id);
+            
+            // Refresh UI
+            renderKeys(allKeys);
+            if (photoModal) photoModal.style.display = 'none';
+            
+        } catch (err) {
+            console.error(err);
+            alert("Error deleting key: " + err.message);
+        } finally {
+            btnModalDelete.textContent = originalText;
+            btnModalDelete.disabled = false;
+        }
     }
 
     // --- CAMERA CONTROLS ---

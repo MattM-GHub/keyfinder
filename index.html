@@ -67,16 +67,17 @@
             </div>
 
             <div class="flex flex-col gap-1">
-                <label class="text-sm font-semibold text-slate-700">Location (Side)</label>
+                <label class="text-sm font-semibold text-slate-700">Location (Page)</label>
                 <div class="flex gap-2">
-                    <button class="side-btn flex-1 py-2 rounded-lg border-2 border-blue-600 bg-blue-50 text-blue-700 font-bold" data-side="Left">Left Page</button>
-                    <button class="side-btn flex-1 py-2 rounded-lg border-2 border-slate-200 bg-white text-slate-600 font-bold" data-side="Right">Right Page</button>
+                    <button class="side-btn flex-1 py-2 rounded-lg border-2 border-blue-600 bg-blue-50 text-blue-700 font-bold text-xs sm:text-sm" data-side="Front Cover">Front Cover</button>
+                    <button class="side-btn flex-1 py-2 rounded-lg border-2 border-slate-200 bg-white text-slate-600 font-bold text-xs sm:text-sm" data-side="Middle Leaf">Middle Leaf</button>
+                    <button class="side-btn flex-1 py-2 rounded-lg border-2 border-slate-200 bg-white text-slate-600 font-bold text-xs sm:text-sm" data-side="Back Cover">Back Cover</button>
                 </div>
             </div>
 
             <div class="flex flex-col gap-1">
                 <label class="text-sm font-semibold text-slate-700">Quadrant (Tap to select)</label>
-                <div id="quadrant-grid" class="grid grid-cols-3 gap-2 bg-slate-200 p-2 rounded-lg aspect-square">
+                <div id="quadrant-grid" class="grid grid-cols-4 gap-2 bg-slate-200 p-2 rounded-lg aspect-square">
                     <!-- Generated via JS -->
                 </div>
             </div>
@@ -98,10 +99,51 @@
         </main>
 
         <!-- Photo Modal -->
-        <div id="photo-modal" class="fixed inset-0 bg-black/90 z-50 hidden flex-col items-center justify-center p-4">
-            <button id="btn-close-modal" class="absolute top-4 right-4 text-white text-xl font-bold bg-white/20 w-10 h-10 rounded-full">&times;</button>
-            <img id="modal-img" src="" alt="Full size key" class="max-w-full max-h-[80vh] object-contain rounded">
-            <p id="modal-caption" class="text-white mt-4 text-lg font-medium"></p>
+        <div id="photo-modal" class="fixed inset-0 bg-black/95 z-50 hidden flex-col items-center justify-start p-4 overflow-y-auto">
+            <div class="w-full max-w-md flex justify-between items-center mb-4 mt-2 shrink-0">
+                <button id="btn-modal-edit" class="bg-slate-800 text-white px-4 py-2 rounded-lg font-medium border border-slate-700">Edit Details</button>
+                <button id="btn-close-modal" class="text-white text-4xl leading-none">&times;</button>
+            </div>
+            
+            <img id="modal-img" src="" alt="Full size key" class="w-full max-w-md max-h-[45vh] object-contain rounded-lg bg-black/50 mb-4 shrink-0">
+            
+            <div class="bg-white w-full max-w-md rounded-xl p-5 flex flex-col gap-4 shrink-0 mb-10">
+                <!-- View Mode -->
+                <div id="modal-view-mode" class="flex flex-col gap-2">
+                    <div class="flex justify-between items-start">
+                        <div>
+                            <h3 id="modal-title" class="text-2xl font-bold text-slate-900 leading-tight"></h3>
+                            <p id="modal-subtitle" class="text-slate-500 font-medium text-sm mt-1"></p>
+                        </div>
+                        <div id="modal-visual-map" class="grid grid-cols-4 gap-[2px] w-16 h-16 bg-slate-200 p-[2px] rounded-md shrink-0"></div>
+                    </div>
+                    <div class="flex items-center gap-2 mt-2">
+                        <span id="modal-color-dot" class="w-4 h-4 rounded-full border border-slate-300 shadow-sm"></span>
+                        <span id="modal-color-text" class="text-slate-700 font-medium"></span>
+                    </div>
+                </div>
+
+                <!-- Edit Mode -->
+                <div id="modal-edit-mode" class="hidden flex-col gap-3 border-t border-slate-100 pt-3">
+                    <div>
+                        <label class="text-xs font-bold text-slate-500 uppercase">Unit Number</label>
+                        <input type="text" id="modal-edit-unit" class="w-full p-3 border border-slate-300 rounded-lg mt-1 bg-slate-50">
+                    </div>
+                    <div>
+                        <label class="text-xs font-bold text-slate-500 uppercase">Color (Hex)</label>
+                        <div class="flex gap-2 items-center mt-1">
+                            <input type="color" id="modal-edit-color" class="w-12 h-12 p-1 border border-slate-300 rounded-lg cursor-pointer shrink-0">
+                            <span id="modal-edit-color-hex" class="text-slate-600 font-mono text-sm"></span>
+                        </div>
+                    </div>
+                    <div class="flex gap-2 mt-3">
+                        <button id="btn-modal-save" class="flex-1 bg-blue-600 text-white py-3 rounded-lg font-bold shadow-md active:scale-95 transition-transform">Save Changes</button>
+                        <button id="btn-modal-cancel" class="flex-1 bg-slate-200 text-slate-800 py-3 rounded-lg font-bold active:scale-95 transition-transform">Cancel</button>
+                    </div>
+                </div>
+
+                <button id="btn-modal-delete" class="w-full bg-red-50 text-red-600 py-3 rounded-lg font-bold mt-2 border border-red-100 hover:bg-red-100 active:scale-95 transition-all">Delete Key</button>
+            </div>
         </div>
 
     </div>
