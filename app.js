@@ -514,7 +514,7 @@ document.addEventListener('DOMContentLoaded', () => {
             btnCapture.classList.add('hidden');
             btnRetake.classList.remove('hidden');
             cameraVideo.classList.add('hidden');
-        }, 'image/webp', 0.8);
+        }, 'image/webp', 0.5);
     }
 
     function retakePhoto() {
