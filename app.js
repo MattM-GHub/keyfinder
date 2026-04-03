@@ -491,7 +491,7 @@ document.addEventListener('DOMContentLoaded', () => {
         const startX = (videoWidth - minSide) / 2;
         const startY = (videoHeight - minSide) / 2;
 
-        const MAX_SIZE = 800;
+        const MAX_SIZE = 600;
         const finalSize = Math.min(minSide, MAX_SIZE);
         
         cameraCanvas.width = finalSize;
@@ -514,7 +514,7 @@ document.addEventListener('DOMContentLoaded', () => {
             btnCapture.classList.add('hidden');
             btnRetake.classList.remove('hidden');
             cameraVideo.classList.add('hidden');
-        }, 'image/webp', 0.5);
+        }, 'image/webp', 0.3);
     }
 
     function retakePhoto() {

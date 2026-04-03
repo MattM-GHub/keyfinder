@@ -53,6 +53,15 @@
     border-radius: 0.5rem;
     object-fit: cover;
     background-color: #f1f5f9;
+    image-rendering: -webkit-optimize-contrast;
+    image-rendering: crisp-edges;
+    filter: contrast(1.15);
+}
+
+#modal-img, #camera-preview {
+    image-rendering: -webkit-optimize-contrast;
+    image-rendering: crisp-edges;
+    filter: contrast(1.15);
 }
 
 .tag-color-indicator {
